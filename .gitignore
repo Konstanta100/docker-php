@@ -1,0 +1,30 @@
+# Global
+.*.swp
+.DS_Store
+
+# Application
+
+mysql/data
+
+# PHPStorm
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/dictionaries
+/.idea
+
+
+# VSCode
+.vscode/
+
+# SSL Certs
+etc/ssl/
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/public/bundles/
+/vendor/
+/var/
+###< symfony/framework-bundle ###
+
