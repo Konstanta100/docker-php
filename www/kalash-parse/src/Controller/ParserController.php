@@ -25,6 +25,7 @@ class ParserController extends AbstractController
 
     /**
      * @Route("/parseNews", name="parseNews")
+     * @throws \Exception
      */
     public function parseNewsAction(Request $request): Response
     {
@@ -47,6 +48,11 @@ class ParserController extends AbstractController
 
         $xmlData = $this->parser->getNews($urls);
 
-        return new Response(implode(' ', $xmlData));
+        $fp = fopen('data.xml', 'w');
+        fwrite($fp, $xmlData->asXML());
+        fclose($fp);
+        var_dump($xmlData);
+
+        return new Response($xmlData->asXML());
     }
 }
