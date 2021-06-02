@@ -48,11 +48,29 @@ class ParserController extends AbstractController
 
         $xmlData = $this->parser->getNews($urls);
 
-        $fp = fopen('data.xml', 'w');
-        fwrite($fp, $xmlData->asXML());
-        fclose($fp);
-        var_dump($xmlData);
+        $response = 'true';
 
-        return new Response($xmlData->asXML());
+        if(file_put_contents('news.xml',$xmlData->asXML())){
+            $response = 'false';
+        }
+
+        return new Response($response);
+    }
+
+    /**
+     * @Route("/parseAbout", name="parseAbout")
+     * @throws \Exception
+     */
+    public function parseAboutAction(): Response
+    {
+        $xmlData = $this->parser->getAbout();
+
+        $response = 'false';
+
+        if(file_put_contents('about.xml',$xmlData->asXML())){
+            $response = 'true';
+        }
+
+        return new Response($response);
     }
 }
