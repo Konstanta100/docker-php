@@ -5,6 +5,7 @@ namespace App\Service;
 
 use App\Entity\Page;
 use App\Entity\Post;
+use App\Entity\Section;
 use SimpleXMLElement;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -73,6 +74,11 @@ class ParserToXml
 
     private int $firstParentId;
     private int $secondParent;
+
+    private string $parentName;
+
+    private string $parentNameRus;
+    private string $postDate;
 
     public function __construct(Crawler $domCrawler)
     {
@@ -150,7 +156,6 @@ class ParserToXml
         }
     }
 
-
     private function createItem(string $html, string $titlePost, string $datePost, string $getRubric): void
     {
         $postName = str_replace(' ', '-', $titlePost);
@@ -193,42 +198,25 @@ class ParserToXml
     }
 
 
-    public function getAbout(): SimpleXMLElement
+    /**
+     * @param Section $section
+     * @return SimpleXMLElement
+     */
+    public function parseSiteMap(Section $section): SimpleXMLElement
     {
-        $html = /** @lang text */
-            <<<HTML
-            <ul>
-                <li><a href="/about/osnovne_svedeniya/">Сведения об организации</a></li>
-            
-                <li><a href="/about/history/">История</a></li>
-            
-                <li><a href="/about/structure/">Структура</a></li>
-            
-                <li><a href="/about/dostupnaya_sreda/">Доступная среда</a></li>
-            
-                <li><a href="/about/partners/">Друзья&nbsp;и&nbsp;партнеры</a></li>
-            
-                <li><a href="/about/contribution/">Сотрудничество</a></li>
-            
-                <li><a href="/about/contacts/">Контакты</a></li>
-            
-                <li><a href="/about/dokument/">Документы</a></li>
-                <ul>
-                    <li><a href="/about/dokument/1.10.07._materialnoe_obespechenie/">Материально-техническое обеспечение и оснащенность образовательного процесса</a></li>
-                </ul>
-            </ul>
-        HTML;
+        self::$postId = $section->getPostId();
+        $this->firstParentId = $section->getFirstParentId();
+        $this->parentName = $section->getParentName();
+        $this->parentNameRus = $section->getParentNameRus();
+        $this->postDate = $section->getPostDate();
 
-        $_color = 'field_60a64f8f347d1';
-        $_image = 'field_60a77275462f1';
-        self::$postId = 300;
-        $this->firstParentId = 35;
+        $this->getUrlPagesFromHtml($section->getHtml());
 
-        $this->getUrlPagesFromHtml($html);
 
         $this->getHtmlFromPages();
 
-        $this->createXmlForPages($_color, $_image);
+
+        $this->createXmlForPages($section->getColor(), $section->getImage());
 
         return $this->xmlElement;
     }
@@ -278,14 +266,7 @@ class ParserToXml
                         if ($node->nodeName === 'ul') {
                             var_dump('test');
                             die();
-                            foreach ($crawler->children() as $child) {
-                                if ($node->nodeName() === 'li') {
-                                    foreach ($crawler->children('a')->extract(['href']) as $element) {
-                                        $thirdParent = self::$postId++;
-                                        $this->pages[] = (new Page())->setUrl($child)->setParentId($thirdParent)->setPostId($thirdParent);
-                                    }
-                                }
-                            }
+
                         }
                     }
                 }
@@ -321,6 +302,8 @@ class ParserToXml
                 $html .= $node->ownerDocument->saveHTML($node);
             }
 
+            $html = $this->changeLinks($html);
+
             $pages[] = $page->setContent($html);
         }
 
@@ -333,6 +316,16 @@ class ParserToXml
      */
     private function createXmlForPages($_color, $_image): void
     {
+        $item = $this->xmlElement->channel[0]->addChild('item');
+        $item->addChild('title', "$this->parentNameRus");
+        $item->addChild('link', $this->host . '/?page_id=' . $this->firstParentId);
+        $item->addChild('post_id', $this->firstParentId, self::XMLNS_WP);
+        $item->addChild('wp:post_name', "$this->parentName", self::XMLNS_WP);
+        $item->addChild('wp:post_parent', 0, self::XMLNS_WP);
+        $item->addChild('wp:post_type', 'page', self::XMLNS_WP);
+        $item->addChild('wp:post_date', $this->postDate, self::XMLNS_WP);
+
+
         foreach ($this->pages as $page) {
             $postName = str_replace(' ', '-', $page->getTitle());
             $postName = str_replace(array('"', '/', ':', '.', ',', '[', ']', '“', '”'), '', strtolower($postName));
@@ -351,10 +344,10 @@ class ParserToXml
                 "<!-- wp:html -->" . $page->getContent() . "<!-- /wp:html -->",
                 self::XMLNS_CONTENT
             );
-            $item->addChild('excerpt:encoded', null,self::XMLNS_EXCERPT);
+            $item->addChild('excerpt:encoded', null, self::XMLNS_EXCERPT);
             $item->addChild('wp:post_id', $page->getPostId(), self::XMLNS_WP);
-            $item->addChild('wp:post_date',null, self::XMLNS_WP);
-            $item->addChild('wp:post_date_gmt',null, self::XMLNS_WP);
+            $item->addChild('wp:post_date', null, self::XMLNS_WP);
+            $item->addChild('wp:post_date_gmt', null, self::XMLNS_WP);
             $item->addChild('wp:comment_status', 'closed', self::XMLNS_WP);
             $item->addChild('wp:ping_status', 'closed', self::XMLNS_WP);
             $item->addChild('wp:post_name', $postName, self::XMLNS_WP);
@@ -362,7 +355,7 @@ class ParserToXml
             $item->addChild('wp:post_parent', $page->getParentId(), self::XMLNS_WP);
             $item->addChild('wp:menu_order', 0, self::XMLNS_WP);
             $item->addChild('wp:post_type', 'page', self::XMLNS_WP);
-            $item->addChild('wp:post_password', null,self::XMLNS_WP);
+            $item->addChild('wp:post_password', null, self::XMLNS_WP);
             $item->addChild('wp:is_sticky', 0, self::XMLNS_WP);
 
             $postmeta = $item->addChild('wp:postmeta', null, self::XMLNS_WP);
@@ -371,12 +364,74 @@ class ParserToXml
 
             $postmeta = $item->addChild('wp:postmeta', null, self::XMLNS_WP);
             $postmeta->addChild('wp:meta_key', '<![CDATA[_color]]>', self::XMLNS_WP);
-            $postmeta->addChild('wp:meta_value', "<![CDATA[". $_color ."]]>", self::XMLNS_WP);
+            $postmeta->addChild('wp:meta_value', "<![CDATA[" . $_color . "]]>", self::XMLNS_WP);
 
             $postmeta = $item->addChild('wp:postmeta', null, self::XMLNS_WP);
             $postmeta->addChild('wp:meta_key', '<![CDATA[_image]]>', self::XMLNS_WP);
-            $postmeta->addChild('wp:meta_value', "<![CDATA[". $_image ."]]>", self::XMLNS_WP);
+            $postmeta->addChild('wp:meta_value', "<![CDATA[" . $_image . "]]>", self::XMLNS_WP);
         }
     }
-}
 
+    /**
+     * @param string $html
+     * @return string
+     */
+    private function changeLinks(string $html): string
+    {
+        // 2. Переделать хост http://museum-mtk.ru/ на /
+        $html = str_replace(['http://museum-mtk.ru', '/museum-mtk.ru', 'museum-mtk.ru', 'detail.htm?id='], '', $html);
+
+        // 1, Из ссылок вида armourers/kalashnikov добавить ведущий слеш
+
+        preg_match_all('/ ?href="((?!mailto|http|\/)[\S.]+)?"/', $html, $links);
+
+        foreach ($links[1] as $link) {
+            $html = str_replace("$link", "/$link", $html);
+        }
+
+        // 3. exhibitions/past/detail.htm?id=731615 на post/detail/731615
+
+//        preg_match_all('/ ?href="([\S.]+?\/detail\.htm\?id=\d+[\S.]+)?"/i', $html, $links);
+//
+//        foreach ($links[1] as $link){
+//            $path = preg_replace('/^.+?detail\.htm\?id=(\d+[\S.]+)/i', "/post/detail/$1", $link);
+//            $html = str_replace("$link", $path, $html);
+//        }
+
+        // 4. Архив документов сохранить /wp-content/uploads/2021/06/1.jpg (переделать ссылки на документы)
+
+        preg_match_all('/ ?href="([\S.]+?(_galleries|_downloads)\/[\S.]+)?"/i', $html, $links);
+
+        if (count($links) > 0) {
+            foreach ($links[1] as $link) {
+                $path = preg_replace("/^.+?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1", $link);
+
+                if($file = file_get_contents($this->parsedHost . $link)){
+                    file_put_contents($_SERVER['DOCUMENT_ROOT'] . $path, $file );
+                }
+
+                $html = str_replace("$link", $path, $html);
+            }
+        }
+
+        // 5. Архив картинок сохранить wp-content/uploads/2021/06/1.jpg (переделать ссылки на картинки)
+
+        preg_match_all('/ ?src="([\S.]+?(_images|_common)\/[\S.]+)?"/', $html, $links);
+
+        if (count($links) > 0) {
+            foreach ($links[1] as $link) {
+                $path = preg_replace("/^.+?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1", $link);
+
+                if ($file = @file_get_contents($this->parsedHost . $link)) {
+                    file_put_contents($_SERVER['DOCUMENT_ROOT'] . $path, $file);
+                }
+
+                $html = str_replace("$link", $path, $html);
+            }
+        }
+
+        echo '<p>' . $html . '</p>';
+
+        return $html;
+    }
+}
