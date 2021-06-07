@@ -379,7 +379,7 @@ class ParserToXml
     private function changeLinks(string $html): string
     {
         // 2. Переделать хост http://museum-mtk.ru/ на /
-        $html = str_replace(['http://museum-mtk.ru', '/museum-mtk.ru', 'museum-mtk.ru', 'detail.htm?id='], '', $html);
+        $html = str_replace(['http://museum-mtk.ru', '/museum-mtk.ru', 'detail.htm?id='], '', $html);
 
         // 1, Из ссылок вида armourers/kalashnikov добавить ведущий слеш
 
@@ -405,6 +405,11 @@ class ParserToXml
         if (count($links) > 0) {
             foreach ($links[1] as $link) {
                 $path = preg_replace("/^.+?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1", $link);
+
+                if(file_exists($_SERVER['DOCUMENT_ROOT'] . $path)){
+                    $path = preg_replace("/^.+?\/(\w{1,29})?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1_$2", $link);
+                    echo '<p>' . $path . '</p>';
+                }
 
                 if($file = file_get_contents($this->parsedHost . $link)){
                     file_put_contents($_SERVER['DOCUMENT_ROOT'] . $path, $file );
