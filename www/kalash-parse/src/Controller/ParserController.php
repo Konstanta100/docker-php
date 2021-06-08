@@ -69,7 +69,7 @@ class ParserController extends AbstractController
      */
     public function parseSiteMapAction(?string $section): Response
     {
-        $response = 'true';
+        $response = new  Response();
 
         switch ($section) {
             case 'about':
@@ -254,6 +254,48 @@ class ParserController extends AbstractController
                     ->setPostDate('2021-05-31 15:19:52');
 
                 break;
+            case 'education':
+
+                $html = /** @lang text */
+                    <<<HTML
+                    <ul>
+                        <li><a href="/education/svedeniya_ob_obrazovatelnoj_organizatsii/">Сведения об образовательной организации</a></li>
+                        <ul>
+
+                            <li><a href="/education/svedeniya_ob_obrazovatelnoj_organizatsii/platne_obrazovatelne_uslugi/">Платные образовательные услуги</a></li>
+                        
+                            <li><a href="/education/svedeniya_ob_obrazovatelnoj_organizatsii/Nok/">Независимая оценка качества образования</a></li>
+                        </ul>
+                        
+                        <li><a href="/education/excursions/">Тематические экскурсии</a></li>
+                        
+                        <li><a href="/education/lections/">Лекции</a></li>
+                        
+                        <li><a href="/education/actions/">Мероприятия</a></li>
+                        
+                        <li><a href="/education/programs/">Образовательные программы и циклы занятий</a></li>
+                        
+                        <ul>
+                            <li><a href="/education/programs/1.10.11._platne_obrazovatelne_uslugi/">Платные образовательные услуги</a></li>
+                        </ul>
+                        
+                        <li><a href="/education/dop/">Доступная образовательная программа</a></li>
+                        
+                        <li><a href="/education/library/">Библиотека</a></li>
+                    </ul>
+                HTML;
+
+                $section = (new Section())
+                    ->setHtml($html)
+                    ->setColor('field_60a64f8f347d1')
+                    ->setImage('field_60a77275462f1')
+                    ->setPostId(800)
+                    ->setFirstParentId(59)
+                    ->setParentName('education')
+                    ->setParentNameRus('Просвещение и образование')
+                    ->setPostDate('2021-05-19 16:24:10');
+
+                break;
             default:
                 return new Response($response);
 
@@ -261,9 +303,12 @@ class ParserController extends AbstractController
 
         $xmlData = $this->parser->parseSiteMap($section);
         if (file_put_contents($section->getParentName() . '.xml', $xmlData->asXML())) {
-            $response = 'false';
+            $response->setContent('Файл создан');
+        }else{
+            $response->setStatusCode(400);
+            $response->setContent('Не удалось создать файл');
         }
 
-        return new Response($response);
+        return $response;
     }
 }

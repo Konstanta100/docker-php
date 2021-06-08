@@ -94,7 +94,7 @@ class ParserToXml
     public function getNews(array $urls = []): SimpleXMLElement
     {
         //Инициализируем сеанс
-        self::$postId = 200;
+        self::$postId = 800;
         $curl = curl_init();
 
         foreach ($urls as $url) {
@@ -118,10 +118,34 @@ class ParserToXml
         $this->domCrawler->filterXPath("//body//div[contains(@class, 'press-rubric')]")->each(
             function (Crawler $crawler) {
                 $url = 'http://museum-mtk.ru/presscenter/news/';
+                $crawler->children()->each(
+
+                );
                 $nameRubric = trim($crawler->filterXPath("//h2")->text());
+
+                $posts = [];
+
                 foreach ($crawler->filterXPath("//h3//a")->extract(['href']) as $node) {
-                    $this->posts[] = (new Post())->setRubric($nameRubric)->setUrl($url . $node);
+                    $posts[] = (new Post())->setRubric($nameRubric)->setUrl($url . $node);
                 }
+
+                $i = count($posts)-1;
+
+                foreach ($crawler->filterXPath("//p") as $node) {
+                    $nodeValue = trim($node->nodeValue);
+
+                    if(preg_match('/^\d\d\.\d\d\.\d{4}$/i', $nodeValue)){
+                        $posts[$i]
+                        $nodeValue
+                    }else{
+
+                    }
+
+
+                }
+
+
+                $this->posts = array_merge($this->posts, $posts);
             }
         );
 
@@ -264,9 +288,30 @@ class ParserToXml
                         }
 
                         if ($node->nodeName === 'ul') {
-                            var_dump('test');
-                            die();
+                            foreach ($node->childNodes as $childNode) {
+                                if ($childNode->nodeName === 'li') {
+                                    $attrValue = $childNode->firstChild->attributes->item(0)->nodeValue;
+                                    var_dump($attrValue);
+                                    preg_match('/^(.+\/)(.+\/{0,1})$/', $attrValue, $matches);
 
+                                    $nodeValue = $childNode->firstChild->nodeValue;
+                                    var_dump($nodeValue);
+                                    $fourthParent = self::$postId++;
+
+                                    $this->pages[] = (new Page())
+                                        ->setUrl($attrValue)
+                                        ->setParentId($this->secondParent)
+                                        ->setPostId($fourthParent)
+                                        ->setTitle($nodeValue)
+                                        ->setParentUrl($matches[1])
+                                        ->setUrl($matches[2]);
+                                }
+
+                                if ($childNode->nodeName === 'ul') {
+                                    var_dump('bug');
+                                    die();
+                                }
+                            }
                         }
                     }
                 }
@@ -406,13 +451,13 @@ class ParserToXml
             foreach ($links[1] as $link) {
                 $path = preg_replace("/^.+?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1", $link);
 
-                if(file_exists($_SERVER['DOCUMENT_ROOT'] . $path)){
+                if (file_exists($_SERVER['DOCUMENT_ROOT'] . $path)) {
                     $path = preg_replace("/^.+?\/(\w{1,29})?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1_$2", $link);
                     echo '<p>' . $path . '</p>';
                 }
 
-                if($file = file_get_contents($this->parsedHost . $link)){
-                    file_put_contents($_SERVER['DOCUMENT_ROOT'] . $path, $file );
+                if ($file = @file_get_contents($this->parsedHost . $link)) {
+                    file_put_contents($_SERVER['DOCUMENT_ROOT'] . $path, $file);
                 }
 
                 $html = str_replace("$link", $path, $html);

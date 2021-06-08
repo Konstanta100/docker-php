@@ -22,6 +22,18 @@ class Post
     private string $rubric;
 
     /**
+     * Создание записи
+     * @var string
+     */
+    private string $date;
+
+    /**
+     * Краткое описание
+     * @var string
+     */
+    private string $description;
+
+    /**
      * @return string
      */
     public function getRubric(): string
@@ -54,6 +66,42 @@ class Post
     public function setUrl(string $url): self
     {
         $this->url = $url;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+    /**
+     * @param string $description
+     * @return Post
+     */
+    public function setDescription(string $description): self
+    {
+        $this->description = $description;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDate(): string
+    {
+        return $this->date;
+    }
+
+    /**
+     * @param string $date
+     * @return Post
+     */
+    public function setDate(string $date): self
+    {
+        $this->date = $date;
         return $this;
     }
 }
