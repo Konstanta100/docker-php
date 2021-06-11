@@ -6,7 +6,9 @@ namespace App\Service;
 use App\Entity\Page;
 use App\Entity\Post;
 use App\Entity\Section;
+use DOMElement;
 use SimpleXMLElement;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\DomCrawler\Crawler;
 
 
@@ -91,7 +93,7 @@ class ParserToXml
      * @return SimpleXMLElement
      * @throws \Exception
      */
-    public function getNews(array $urls = []): SimpleXMLElement
+    public function getNews(string $year, array $urls = []): void
     {
         //Инициализируем сеанс
         self::$postId = 800;
@@ -104,10 +106,23 @@ class ParserToXml
 
             $html = curl_exec($curl);
 
+            $this->posts = [];
             $this->extractFromHtml((string)$html);
-        }
 
-        return $this->xmlElement;
+            foreach ($this->posts as $post) {
+                $html = $this->changeLinks($post->getHtml());
+                $this->createItem($post->setHtml($html));
+            }
+
+            if (file_put_contents($file = "{$year}_" . substr($url, -2)  . "_news.xml", $this->xmlElement->asXML())) {
+                var_dump("Записан: {$file}");
+                $this->xmlElement = new SimpleXMLElement(self::XMLSTR);
+            }else{
+                var_dump("Не удалось записать: {$file}");
+                die();
+            }
+
+        }
     }
 
     public function extractFromHtml($html): void
@@ -118,91 +133,90 @@ class ParserToXml
         $this->domCrawler->filterXPath("//body//div[contains(@class, 'press-rubric')]")->each(
             function (Crawler $crawler) {
                 $url = 'http://museum-mtk.ru/presscenter/news/';
-                $crawler->children()->each(
 
-                );
                 $nameRubric = trim($crawler->filterXPath("//h2")->text());
 
                 $posts = [];
+
+                foreach ($crawler->filterXPath("//h3") as $node) {
+                    if($node->firstChild instanceof DOMElement){
+                        $postUrl = $url . $node->firstChild->attributes->item(0)->nodeValue;
+                    }else{
+                        $postUrl = '';
+                    }
+                    $posts[] = (new Post())->setRubric($nameRubric)->setUrl($postUrl);
+                }
 
                 foreach ($crawler->filterXPath("//h3//a")->extract(['href']) as $node) {
                     $posts[] = (new Post())->setRubric($nameRubric)->setUrl($url . $node);
                 }
 
-                $i = count($posts)-1;
-
+                $j = 0;
                 foreach ($crawler->filterXPath("//p") as $node) {
                     $nodeValue = trim($node->nodeValue);
 
                     if(preg_match('/^\d\d\.\d\d\.\d{4}$/i', $nodeValue)){
-                        $posts[$i]
-                        $nodeValue
+                        $posts[$j]->setDate($nodeValue);
                     }else{
-
+                        $post = $posts[$j++]->setDescription($nodeValue);
+                        if($post->getUrl() !== ''){
+                            $this->posts[] = $post;
+                        }
                     }
-
-
                 }
-
-
-                $this->posts = array_merge($this->posts, $posts);
             }
         );
 
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-
-        foreach ($this->posts as $post) {
+        foreach ($this->posts as $key => $post) {
             $this->domCrawler->clear();
+
+            $curl = curl_init();
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($curl, CURLOPT_URL, $post->getUrl());
+
             $html = curl_exec($curl);
             $this->domCrawler->add($html);
+
             try {
                 $titlePost = trim($this->domCrawler->filterXPath("//body//div[contains(@class, 'right-part')]//h1")->text());
-                $datePost = trim($this->domCrawler->filterXPath("//body//div[contains(@class, 'right-part')]//p")->first()->text());
-                $rightPart = $this->domCrawler->filterXPath("//body//div[contains(@class, 'right-part')]");
+                $html = $this->domCrawler->filterXPath("//body//div[contains(@class, 'right-part')]")->html();
             } catch (\Exception $exception) {
+                unset($this->posts[$key]);
                 continue;
             }
 
-            $bodyPost = $rightPart->children()->reduce(
-                function (Crawler $crawler) {
-                    return !($crawler->nodeName() === 'h1' || in_array(current($crawler->extract(['class'])), ['statusbar', 'overflow']));
-                }
-            );
+            preg_match('/<p>\d{2}\.\d{2}.\d{4}<\/p>/i', $html, $times);
+            preg_match('/<div class="statusbar">(\s*.*){0,4}<\/div>\s*<div class="overflow">(\s*.*){0,3}<\/div>/i', $html, $divs);
+            preg_match('/<h1>.*<\/h1>/i', $html, $h1);
 
-            $html = '';
-            foreach ($bodyPost as $node) {
-                $html .= $node->ownerDocument->saveHTML($node);
-            }
+            $html = str_replace([$times[0],$divs[0], $h1[0]], '' ,$html);
 
-            $this->createItem($html, $titlePost, $datePost, $post->getRubric());
+            $post->setHtml($html);
+            $post->setTitle($titlePost);
         }
     }
 
-    private function createItem(string $html, string $titlePost, string $datePost, string $getRubric): void
+
+    private function createItem(Post $post): void
     {
-        $postName = str_replace(' ', '-', $titlePost);
-        $postName = str_replace(array('"', '/', ':', '.', ',', '[', ']', '“', '”'), '', strtolower($postName));
+        $postName = str_replace(' ', '-', $post->getTitle());
+        $postName = urlencode(str_replace(array('"', '/', ':', '.', ',', '[', ']', '“', '”'), '', strtolower($postName)));
+        $startDate = preg_replace("/^(\d{2})\.(\d{2})\.(\d{4})$/i", "$3$2$1", $post->getDate());
 
         $postId = self::$postId++;
 
         $item = $this->xmlElement->channel[0]->addChild('item');
-        $item->addChild('title', $titlePost);
+        $item->addChild('title', $post->getTitle());
         $item->addChild('link', $this->host . '/?p=' . $postId);
-        $item->addChild('pubDate'); //$datePost
-        $item->addChild('dc:creator', self::XMLNS_DC);
+        $item->addChild('dc:creator', null, self::XMLNS_DC);
         $item->addChild('guid', $this->host . '/?p=' . $postId)->addAttribute('isPermaLink', 'false');
-        $item->addChild('description', "");
         $item->addChild(
             'content:encoded',
-            "<!-- wp:html -->$html<!-- /wp:html -->",
+            "<!-- wp:html -->{$post->getHtml()}<!-- /wp:html -->",
             self::XMLNS_CONTENT
         );
-        $item->addChild('excerpt:encoded', self::XMLNS_EXCERPT);
+        $item->addChild('excerpt:encoded', $post->getDescription(),self::XMLNS_EXCERPT);
         $item->addChild('wp:post_id', $postId, self::XMLNS_WP);
-        $item->addChild('wp:post_date', '2021-05-19 09:52:38', self::XMLNS_WP);
-        $item->addChild('wp:post_date_gmt', '2021-05-19 06:52:38', self::XMLNS_WP);
         $item->addChild('wp:comment_status', 'open', self::XMLNS_WP);
         $item->addChild('wp:ping_status', 'open', self::XMLNS_WP);
         $item->addChild('wp:post_name', $postName, self::XMLNS_WP);
@@ -212,13 +226,14 @@ class ParserToXml
         $item->addChild('wp:post_type', 'post', self::XMLNS_WP);
         $item->addChild('wp:post_password', '', self::XMLNS_WP);
         $item->addChild('wp:is_sticky', 0, self::XMLNS_WP);
-        $category = $item->addChild('category', $getRubric);
+        $category = $item->addChild('category', $post->getRubric());
         $category->addAttribute('domain', 'category');
-        $getRubric = str_replace(' ', '-', $getRubric);
-        $category->addAttribute('nicename', urlencode($getRubric));
+
+        $rubric = $this->translateCategory($post->getRubric());
+        $category->addAttribute('nicename', $rubric);
         $postmeta = $item->addChild('wp:postmeta', null, self::XMLNS_WP);
-        $postmeta->addChild('wp:meta_key', '<![CDATA[_edit_last]]>', self::XMLNS_WP);
-        $postmeta->addChild('wp:meta_value', '<![CDATA[1]]>', self::XMLNS_WP);
+        $postmeta->addChild('wp:meta_key', 'start_date', self::XMLNS_WP);
+        $postmeta->addChild('wp:meta_value', "$startDate", self::XMLNS_WP);
     }
 
 
@@ -417,6 +432,8 @@ class ParserToXml
         }
     }
 
+
+
     /**
      * @param string $html
      * @return string
@@ -424,7 +441,11 @@ class ParserToXml
     private function changeLinks(string $html): string
     {
         // 2. Переделать хост http://museum-mtk.ru/ на /
-        $html = str_replace(['http://museum-mtk.ru', '/museum-mtk.ru', 'detail.htm?id='], '', $html);
+        $html = str_replace(['href="http://www.museum-mtk.ru"','href="http://museum-mtk.ru"'], 'href="/"', $html);
+
+        $html = str_replace(['http://www.museum-mtk.ru','http://museum-mtk.ru', '/museum-mtk.ru'], '', $html);
+
+        $html = str_replace(['detail.htm?id='], 'id', $html);
 
         // 1, Из ссылок вида armourers/kalashnikov добавить ведущий слеш
 
@@ -443,16 +464,17 @@ class ParserToXml
 //            $html = str_replace("$link", $path, $html);
 //        }
 
-        // 4. Архив документов сохранить /wp-content/uploads/2021/06/1.jpg (переделать ссылки на документы)
+        // 4. Архив документов и картинок сохранить /wp-content/uploads/2021/06/1.jpg (переделать ссылки на документы)
 
-        preg_match_all('/ ?href="([\S.]+?(_galleries|_downloads)\/[\S.]+)?"/i', $html, $links);
+        preg_match_all('/="(\/(_common|_images|_galleries|_downloads)\/[^\s=]+)"/i', $html, $links);
 
-        if (count($links) > 0) {
+
+        if (count($links[1]) > 0) {
             foreach ($links[1] as $link) {
                 $path = preg_replace("/^.+?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1", $link);
 
                 if (file_exists($_SERVER['DOCUMENT_ROOT'] . $path)) {
-                    $path = preg_replace("/^.+?\/(\w{1,29})?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1_$2", $link);
+                    $path = preg_replace("/^.+?\/([-.\w]{1,55})?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1_$2", $link);
                     echo '<p>' . $path . '</p>';
                 }
 
@@ -464,24 +486,44 @@ class ParserToXml
             }
         }
 
-        // 5. Архив картинок сохранить wp-content/uploads/2021/06/1.jpg (переделать ссылки на картинки)
+        return str_replace(['.jpg/?thu=1'], '-100x100.jpg', $html);
+    }
 
-        preg_match_all('/ ?src="([\S.]+?(_images|_common)\/[\S.]+)?"/', $html, $links);
-
-        if (count($links) > 0) {
-            foreach ($links[1] as $link) {
-                $path = preg_replace("/^.+?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1", $link);
-
-                if ($file = @file_get_contents($this->parsedHost . $link)) {
-                    file_put_contents($_SERVER['DOCUMENT_ROOT'] . $path, $file);
-                }
-
-                $html = str_replace("$link", $path, $html);
-            }
+    /**
+     * @param string $rubric
+     * @return string
+     */
+    private function translateCategory(string $rubric): string
+    {
+        switch ($rubric){
+            case 'Общие новости':
+                $rubric = 'news-general';
+                break;
+            case 'Выставки':
+                $rubric = 'exhibitions';
+                break;
+            case 'Издания':
+                $rubric = 'publications';
+                break;
+            case 'Коллекции':
+                $rubric = 'collections';
+                break;
+            case  'Просвещение и образование':
+                $rubric = 'education';
+                break;
+            case 'Туризм':
+                $rubric = 'tourism';
+                break;
+            case 'Концерт':
+                $rubric = 'concert';
+                break;
+            case 'Визиты':
+                $rubric = 'sessions';
+                break;
+            default:
+                die();
         }
 
-        echo '<p>' . $html . '</p>';
-
-        return $html;
+        return $rubric;
     }
 }

@@ -34,6 +34,18 @@ class Post
     private string $description;
 
     /**
+     * Content html
+     * @var string
+     */
+    private string $html;
+
+    /**
+     * Title
+     * @var string
+     */
+    private string $title;
+
+    /**
      * @return string
      */
     public function getRubric(): string
@@ -102,6 +114,42 @@ class Post
     public function setDate(string $date): self
     {
         $this->date = $date;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHtml(): string
+    {
+        return $this->html;
+    }
+
+    /**
+     * @param string $html
+     * @return Post
+     */
+    public function setHtml(string $html): self
+    {
+        $this->html = $html;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    /**
+     * @param string $title
+     * @return Post
+     */
+    public function setTitle(string $title): self
+    {
+        $this->title = $title;
         return $this;
     }
 }

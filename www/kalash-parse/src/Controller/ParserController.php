@@ -30,37 +30,171 @@ class ParserController extends AbstractController
     }
 
     /**
-     * @Route("/parseNews", name="parseNews")
+     * @Route("/parseNews/{year}", name="parseNews")
      * @throws \Exception
      */
-    public function parseNewsAction(Request $request): Response
+    public function parseNewsAction(string $year): Response
     {
-        $newsUrl = 'http://museum-mtk.ru/presscenter/news/index.htm?';
-
-        $firstYear = $request->get('start');
-        $lastYear = $request->get('end');
-
-        if ($lastYear === null || $firstYear === null) {
-            $firstYear = 2011;
-            $lastYear = (int)date("Y");
+        switch ((int)$year) {
+            case 2011:
+                $urls = [
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2011'
+                ];
+                break;
+            case 2012:
+                $urls = [
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=01',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=03',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=04',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=05',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=06',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=08',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=09',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=10',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=11',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2012&month=12'
+                ];
+                break;
+            case 2013:
+                $urls = [
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2013&month=01',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2013&month=02',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2013&month=05',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2013&month=06',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2013&month=09',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2013&month=10',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2013&month=11',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2013&month=12'
+                ];
+                break;
+            case 2014:
+                $urls = [
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=01',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=02',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=03',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=04',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=05',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=06',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=07',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=08',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=09',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=10',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=11',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2014&month=12'
+                ];
+                break;
+            case 2015:
+                $urls = [
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=02',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=03',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=04',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=06',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=07',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=08',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=09',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=10',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2015&month=11',
+                ];
+                break;
+            case 2016:
+                $urls = [
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=01',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=02',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=03',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=04',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=05',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=06',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=07',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=08',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=09',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=10',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=11',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2016&month=12'
+                ];
+                break;
+            case 2017:
+                $urls = [
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=01',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=02',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=03',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=04',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=05',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=06',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=07',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=08',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=09',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=10',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=11',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2017&month=12'
+                ];
+                break;
+            case 2018:
+                $urls = [
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=01',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=02',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=03',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=04',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=05',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=06',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=07',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=08',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=09',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=10',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=11',
+//                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2018&month=12'
+                ];
+                break;
+            case 2019:
+                $urls = [
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=01',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=02',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=03',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=04',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=05',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=06',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=07',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=08',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=09',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=10',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=11',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2019&month=12'
+                ];
+                break;
+            case 2020:
+                $urls = [
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=01',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=02',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=03',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=04',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=05',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=06',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=07',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=08',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=09',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=10',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=11',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2020&month=12'
+                ];
+                break;
+            case 2021:
+                $urls = [
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2021&month=01',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2021&month=02',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2021&month=03',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2021&month=04',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2021&month=05',
+                    'http://museum-mtk.ru/presscenter/news/index.htm?year=2021&month=06',
+                ];
+                break;
+            default:
+                echo 'Fail';
+                die();
         }
 
-        $urls = [];
-        for ($year = $firstYear; $year <= $lastYear; $year++) {
-            for ($month = 1; $month <= 12; $month++) {
-                $urls[] = $newsUrl . 'year=' . $year . '&month=' . $month;
-            }
-        }
 
-        $xmlData = $this->parser->getNews($urls);
+        $this->parser->getNews($year, $urls);
 
-        $response = 'true';
-
-        if (file_put_contents('news.xml', $xmlData->asXML())) {
-            $response = 'false';
-        }
-
-        return new Response($response);
+        return new Response();
     }
 
     /**
@@ -261,7 +395,6 @@ class ParserController extends AbstractController
                     <ul>
                         <li><a href="/education/svedeniya_ob_obrazovatelnoj_organizatsii/">Сведения об образовательной организации</a></li>
                         <ul>
-
                             <li><a href="/education/svedeniya_ob_obrazovatelnoj_organizatsii/platne_obrazovatelne_uslugi/">Платные образовательные услуги</a></li>
                         
                             <li><a href="/education/svedeniya_ob_obrazovatelnoj_organizatsii/Nok/">Независимая оценка качества образования</a></li>
@@ -304,11 +437,14 @@ class ParserController extends AbstractController
         $xmlData = $this->parser->parseSiteMap($section);
         if (file_put_contents($section->getParentName() . '.xml', $xmlData->asXML())) {
             $response->setContent('Файл создан');
-        }else{
+        } else {
             $response->setStatusCode(400);
             $response->setContent('Не удалось создать файл');
         }
 
+
         return $response;
     }
 }
+
+
