@@ -41,7 +41,6 @@ class ParserToXml
             <channel>
                 <title>Музей им. М. Т. Калашникова</title>
                 <link>http://kalash</link>
-                <description></description>
                 <pubDate>Wed, 26 May 2021 09:47:12 +0000</pubDate>
                 <language>ru-RU</language>
                 <wp:wxr_version>1.2</wp:wxr_version>
@@ -97,46 +96,57 @@ class ParserToXml
      * @param array $urls
      * @param string $category
      * @param string $postfix
+     * @param bool $paramAll
      * @return void
      */
     public function getNews(string $name, array $urls = [], string $category, string $postfix, bool $paramAll): void
     {
         $this->postfix = $postfix;
         $this->category = $category; //Инициализируем сеанс
-        $curl = curl_init();
-        set_time_limit(300);
+
         foreach ($urls as $key => $url) {
             self::$postId = $key;
-
+            $curl = curl_init();
             curl_setopt($curl, CURLOPT_URL, $this->parsedHost . $this->category . $postfix . $url);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-            $html = curl_exec($curl);
+            curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
 
-            while($html === false){
+            $i = 0;
+
+            do {
                 $html = curl_exec($curl);
+                $i++;
+                if ($i > 5) {
+                    break;
+                }
+            } while ($html === false);
+
+            if ($i > 5) {
+                var_dump('Не получается подключиться к файлу:' . $url);
+                die();
             }
 
             $this->posts = [];
             echo '<p>' . $url . '</p>';
             $this->extractFromHtml((string)$html);
 
-            if(count($this->posts) === 0){
+            if (count($this->posts) === 0) {
                 continue;
             }
             foreach ($this->posts as $post) {
-                if($post->getPostName()) {
+                if ($post->getPostName()) {
                     $this->prefix = "{$post->getPostName()}_";
                 }
                 $html = $this->changeLinks($post->getHtml());
                 $this->createItem($post->setHtml($html));
             }
-            if($paramAll === false){
+            if ($paramAll === false) {
                 $xmlFile = $this->xmlElement->asXML();
-                $xmlFile = str_replace('&lt;![C', '<![C' , $xmlFile );
-                $xmlFile = str_replace(']]&gt;<', ']]><' , $xmlFile );
-                if (file_put_contents($file = "{$name}_" . substr($url, -2)  . "_$postfix.xml", $xmlFile)) {
+                $xmlFile = str_replace('&lt;![C', '<![C', $xmlFile);
+                $xmlFile = str_replace(']]&gt;<', ']]><', $xmlFile);
+                if (file_put_contents($file = "{$name}_" . substr($url, -2) . "_$postfix.xml", $xmlFile)) {
                     var_dump("Записан: {$file}");
-                }else{
+                } else {
                     var_dump("Не удалось записать: {$file}");
                     die();
                 }
@@ -144,13 +154,13 @@ class ParserToXml
             }
 
         }
-        if($paramAll === true){
+        if ($paramAll === true) {
             $xmlFile = $this->xmlElement->asXML();
-            $xmlFile = str_replace('&lt;![C', '<![C' , $xmlFile );
-            $xmlFile = str_replace(']]&gt;<', ']]><' , $xmlFile );
+            $xmlFile = str_replace('&lt;![C', '<![C', $xmlFile);
+            $xmlFile = str_replace(']]&gt;<', ']]><', $xmlFile);
             if (file_put_contents($file = "{$name}_$postfix.xml", $xmlFile)) {
                 var_dump("Записан: {$file}");
-            }else{
+            } else {
                 var_dump("Не удалось записать: {$file}");
                 die();
             }
@@ -171,11 +181,11 @@ class ParserToXml
                 $posts = [];
 
                 foreach ($crawler->filterXPath("//h3") as $node) {
-                    if($node->firstChild instanceof DOMElement){
+                    if ($node->firstChild instanceof DOMElement) {
                         $nodeValue = $node->firstChild->attributes->item(0)->nodeValue;
-                        $postName = preg_replace('/^.*?=(\d+)$/i', 'id$1', $nodeValue) ;
+                        $postName = preg_replace('/^.*?=(\d+)$/i', 'id$1', $nodeValue);
                         $postUrl = $url . $nodeValue;
-                    }else{
+                    } else {
                         $postName = null;
                         $postUrl = '';
                     }
@@ -186,9 +196,9 @@ class ParserToXml
                 foreach ($crawler->filterXPath("//p") as $node) {
                     $nodeValue = trim($node->nodeValue);
 
-                    if(preg_match('/^\d\d\.\d\d\.\d{4}$/i', $nodeValue)){
+                    if (preg_match('/^\d\d\.\d\d\.\d{4}$/i', $nodeValue)) {
                         $posts[$j]->setDate($nodeValue);
-                    }else{
+                    } else {
                         $post = $posts[$j++]->setDescription($nodeValue);
                         $this->posts[] = $post;
                     }
@@ -199,37 +209,47 @@ class ParserToXml
         echo '<p> Постов всего:' . self::$countPosts . '</p>';
 
         foreach ($this->posts as $key => $post) {
+            if ($post->getUrl()) {
+                $this->domCrawler->clear();
 
-            $this->domCrawler->clear();
+                $curl = curl_init();
+                curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($curl, CURLOPT_URL, $post->getUrl());
+                curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
 
-            $curl = curl_init();
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($curl, CURLOPT_URL, $post->getUrl());
+                $i = 0;
 
-            $html = curl_exec($curl);
+                do {
+                    $html = curl_exec($curl);
+                    $i++;
+                    if ($i > 5) {
+                        break;
+                    }
+                } while ($html === false);
 
-            while($html === false){
-                $html = curl_exec($curl);
+                if ($i > 5) {
+                    var_dump('Не получается подключиться к файлу:' . $post->getUrl());
+                    die();
+                }
+
+                $this->domCrawler->add($html);
+
+                try {
+                    $html = $this->domCrawler->filterXPath("//body//div[contains(@class, 'right-part')]")->html();
+                } catch (\Exception $exception) {
+                    unset($this->posts[$key]);
+                    self::$countPosts--;
+                    continue;
+                }
+
+                preg_match('/<p>\d{2}\.\d{2}.\d{4}<\/p>/i', $html, $times);
+                preg_match('/<div class="statusbar">(\s*.*){0,4}<\/div>\s*<div class="overflow">(\s*.*){0,3}<\/div>/i', $html, $divs);
+                preg_match('/<h1>.*<\/h1>/i', $html, $h1);
+
+                $html = str_replace([$times[0], $divs[0], $h1[0]], '', $html);
+
+                $post->setHtml($html);
             }
-
-            $this->domCrawler->add($html);
-
-            try {
-                $html = $this->domCrawler->filterXPath("//body//div[contains(@class, 'right-part')]")->html();
-            } catch (\Exception $exception) {
-                unset($this->posts[$key]);
-                self::$countPosts--;
-                continue;
-            }
-
-            preg_match('/<p>\d{2}\.\d{2}.\d{4}<\/p>/i', $html, $times);
-            preg_match('/<div class="statusbar">(\s*.*){0,4}<\/div>\s*<div class="overflow">(\s*.*){0,3}<\/div>/i', $html, $divs);
-            preg_match('/<h1>.*<\/h1>/i', $html, $h1);
-
-            $html = str_replace([$times[0], $divs[0], $h1[0]], '', $html);
-
-            $post->setHtml($html);
-
         }
         echo '<p> Постов осталось:' . self::$countPosts . '</p>';
     }
@@ -237,10 +257,16 @@ class ParserToXml
 
     private function createItem(Post $post): void
     {
-        if($post->getDate()){
+        if ($post->getDate()) {
             $startDate = preg_replace("/^(\d{2})\.(\d{2})\.(\d{4})$/i", "$3-$2-$1", $post->getDate());
-        }else{
+        } else {
             $startDate = '';
+        }
+
+        if ($post->getEndDate()) {
+            $endDate = preg_replace("/^(\d{2})\.(\d{2})\.(\d{4})$/i", "$3-$2-$1", $post->getEndDate());
+        } else {
+            $endDate = '';
         }
 
         $item = $this->xmlElement->channel[0]->addChild('item');
@@ -252,9 +278,9 @@ class ParserToXml
             "<!-- wp:html -->{$post->getHtml()}<!-- /wp:html -->",
             self::XMLNS_CONTENT
         );
-        $item->addChild('excerpt:encoded', $post->getDescription(),self::XMLNS_EXCERPT);
+        $item->addChild('excerpt:encoded', $post->getDescription(), self::XMLNS_EXCERPT);
         $item->addChild('wp:post_id', $post->getId(), self::XMLNS_WP);
-        $item->addChild('wp:post_date', date("Y-m-d ") . random_int(10, 13) . ":" . random_int(10, 59) . ":" . random_int(10, 59),self::XMLNS_WP);
+        $item->addChild('wp:post_date', date("Y-m-d ") . random_int(10, 11) . ":" . random_int(10, 59) . ":" . random_int(10, 59), self::XMLNS_WP);
 
         $postName = $post->getPostName() ?? 'id' . $post->getId();
 
@@ -264,16 +290,39 @@ class ParserToXml
         $item->addChild('wp:post_type', 'post', self::XMLNS_WP);
         $item->addChild('wp:is_sticky', 0, self::XMLNS_WP);
 
-        foreach ($post->getRubrics() as $rubric){
+        $arrayRub = ['kalashnikov' => 'М.Т. Калашников',
+            'weapon' => 'Оружие',
+            'history' => 'История завода',
+            'drugunov' => 'Е.Ф. Драгунов',
+            'niconov' => 'Г. Н. Никонов'
+        ];
+        $salt = null;
+
+        foreach ($arrayRub as $key => $rub) {
+            if (in_array($rub, $post->getRubrics())) {
+                $salt = $key;
+            }
+        }
+
+        foreach ($post->getRubrics() as $rubric) {
             $category = $item->addChild('category', $rubric);
             $category->addAttribute('domain', 'category');
+
             $rubric = $this->translateCategory($rubric);
+
+            if (($rubric === 'books' || $rubric === 'articles') && $salt) {
+                $rubric = $rubric . "-" . $salt;
+            }
+
             $category->addAttribute('nicename', $rubric);
         }
 
         $postmeta = $item->addChild('wp:postmeta', null, self::XMLNS_WP);
         $postmeta->addChild('wp:meta_key', 'start_date', self::XMLNS_WP);
         $postmeta->addChild('wp:meta_value', "$startDate", self::XMLNS_WP);
+        $postmeta = $item->addChild('wp:postmeta', null, self::XMLNS_WP);
+        $postmeta->addChild('wp:meta_key', 'end_date', self::XMLNS_WP);
+        $postmeta->addChild('wp:meta_value', "$endDate", self::XMLNS_WP);
     }
 
 
@@ -479,9 +528,9 @@ class ParserToXml
     private function changeLinks(string $html): string
     {
         // 2. Переделать хост http://museum-mtk.ru/ на /
-        $html = str_replace(['href="http://www.museum-mtk.ru"','href="http://museum-mtk.ru"'], 'href="/"', $html);
+        $html = str_replace(['href="http://www.museum-mtk.ru"', 'href="http://museum-mtk.ru"'], 'href="/"', $html);
 
-        $html = str_replace(['http://www.museum-mtk.ru','http://museum-mtk.ru', '/museum-mtk.ru'], '', $html);
+        $html = str_replace(['http://www.museum-mtk.ru', 'http://museum-mtk.ru', '/museum-mtk.ru'], '', $html);
 
         $html = str_replace(['detail.htm?id='], 'id', $html);
 
@@ -515,7 +564,7 @@ class ParserToXml
                     $path = preg_replace("/^.+?\/([-,\(\)\{\}.\w]{1,55})?\/([^\s\/]+)$/i", "/wp-content/uploads/2021/06/$1_$2", $link);
                 }
 
-                if(!file_exists($_SERVER['DOCUMENT_ROOT'] . $path)){
+                if (!file_exists($_SERVER['DOCUMENT_ROOT'] . $path)) {
                     if ($file = @file_get_contents($this->parsedHost . $link)) {
                         file_put_contents($_SERVER['DOCUMENT_ROOT'] . $path, $file);
                         echo '<p>' . $path . '</p>';
@@ -535,21 +584,21 @@ class ParserToXml
      */
     private function translateCategory(string $rubric): string
     {
-        switch ($rubric){
+        switch ($rubric) {
             case 'Общие новости':
                 $rubric = 'news-general';
                 break;
             case 'Выставки':
-                $rubric = 'exhibitions';
+                $rubric = 'exhibitions-presscenter';
                 break;
             case 'Издания':
-                $rubric = 'publications';
+                $rubric = 'publications-presscenter';
                 break;
             case 'Коллекции':
                 $rubric = 'collections';
                 break;
             case 'Просвещение и образование':
-                $rubric = 'education';
+                $rubric = 'education-presscenter';
                 break;
             case 'Туризм':
                 $rubric = 'tourism';
@@ -561,19 +610,18 @@ class ParserToXml
                 $rubric = 'sessions';
                 break;
             case 'Пресс-релизы':
-                $rubric = 'press-releases';
+                $rubric = 'press-releases-smi';
                 break;
             case 'Статьи':
                 //Сми
                 $rubric = 'articles';
                 //БИБЛИОГРАФИЯ
-//                $rubric = 'articles-bibliography';
                 break;
             case 'Видеорепортажи':
-                $rubric = 'video-reports';
+                $rubric = 'video-reports-smi';
                 break;
             case 'Книги':
-                $rubric = 'books-bibliography';
+                $rubric = 'books';
                 break;
             case 'М.Т. Калашников':
                 $rubric = 'kalashnikov-bibliography';
@@ -593,6 +641,9 @@ class ParserToXml
             case 'bibliography':
                 $rubric = 'bibliography';
                 break;
+            case 'past':
+                $rubric = 'past';
+                break;
             default:
                 die();
         }
@@ -611,18 +662,17 @@ class ParserToXml
     {
         $this->postfix = $postfix;
         $this->category = $category; //Инициализируем сеанс
-        self::$postId = 3000;
+        self::$postId = 13000;
         $curl = curl_init();
         var_dump($urls);
         foreach ($urls as $key => $url) { //Указываем адрес страницы
             curl_setopt($curl, CURLOPT_URL, $this->parsedHost . $this->category . $postfix . $url);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
             $html = curl_exec($curl);
-
 
             $this->posts = [];
             $this->extractBibliographyHtml((string)$html);
-
 
             if (count($this->posts) === 0) {
                 continue;
@@ -654,7 +704,7 @@ class ParserToXml
                 foreach ($crawler->filterXPath("//p") as $node) {
                     $lastChild = '';
 
-                    if($node->childNodes->length === 2){
+                    if ($node->childNodes->length === 2) {
                         $lastChild = $node->lastChild->nodeValue;
                     }
 
@@ -662,19 +712,180 @@ class ParserToXml
 
                     $post = (new Post())->addRubric($nameRubric);
 
-                    if($lastChild){
+                    if ($lastChild) {
                         $post->setTitle($firstChild);
                         $post->setHtml('<p>' . $lastChild . '</p>');
                         $post->setDescription("$lastChild");
-                    }else{
+                    } else {
                         $post->setTitle('');
                         $post->setHtml('<p>' . $firstChild . '</p>');
                         $post->setDescription("$firstChild");
                     }
 
+                    $post->setId(self::$postId++)->setPostName(null);
+
                     $this->posts[] = $post;
                 }
             }
         );
+    }
+
+    /**
+     * @param string $name
+     * @param array $urls
+     * @param string $category
+     * @param string $postfix
+     * @param bool $paramAll
+     * @return void
+     */
+    public function getExhibitions(string $name, array $urls = [], string $category, string $postfix, bool $paramAll): void
+    {
+        $this->postfix = $postfix;
+        $this->category = $category; //Инициализируем сеанс
+
+        foreach ($urls as $key => $url) {
+            self::$postId = $key;
+            $curl = curl_init();
+            curl_setopt($curl, CURLOPT_URL, $this->parsedHost . $this->category . $postfix . $url);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
+
+            $i = 0;
+
+            do {
+                $html = curl_exec($curl);
+                $i++;
+                if ($i > 5) {
+                    break;
+                }
+            } while ($html === false);
+
+            if ($i > 5) {
+                var_dump('Не получается подключиться к файлу:' . $url);
+                die();
+            }
+
+            $this->posts = [];
+            echo '<p>' . $url . '</p>';
+            $this->extractFromHtmlExhibition((string)$html);
+
+            if (count($this->posts) === 0) {
+                continue;
+            }
+            foreach ($this->posts as $post) {
+                if ($post->getPostName()) {
+                    $this->prefix = "{$post->getPostName()}_";
+                }
+                $html = $this->changeLinks($post->getHtml());
+                $this->createItem($post->setHtml($html));
+            }
+            if ($paramAll === false) {
+                $xmlFile = $this->xmlElement->asXML();
+                $xmlFile = str_replace('&lt;![C', '<![C', $xmlFile);
+                $xmlFile = str_replace(']]&gt;<', ']]><', $xmlFile);
+                if (file_put_contents($file = "{$name}_" . substr($url, -2) . "_$postfix.xml", $xmlFile)) {
+                    var_dump("Записан: {$file}");
+                } else {
+                    var_dump("Не удалось записать: {$file}");
+                    die();
+                }
+                $this->xmlElement = new SimpleXMLElement(self::XMLSTR);
+            }
+
+        }
+        if ($paramAll === true) {
+            $xmlFile = $this->xmlElement->asXML();
+            $xmlFile = str_replace('&lt;![C', '<![C', $xmlFile);
+            $xmlFile = str_replace(']]&gt;<', ']]><', $xmlFile);
+            if (file_put_contents($file = "{$name}_$postfix.xml", $xmlFile)) {
+                var_dump("Записан: {$file}");
+            } else {
+                var_dump("Не удалось записать: {$file}");
+                die();
+            }
+        }
+    }
+
+    public function extractFromHtmlExhibition($html): void
+    {
+        $this->domCrawler->clear();
+        $this->domCrawler->add($html);
+
+        $this->domCrawler->filterXPath("//body//div[contains(@class, 'right-part')]")->each(
+            function (Crawler $crawler) {
+                $posts = [];
+
+                foreach ($crawler->filterXPath("//h3") as $node) {
+                    $url = $node->firstChild->attributes->item(0)->nodeValue;
+                    $postName = preg_replace('/^.*?=(\d+)$/i', 'id$1', $url);
+                    $posts[] = (new Post())->addRubric($this->postfix)->setTitle($node->nodeValue)->setId(self::$postId++)->setUrl($this->parsedHost . $url)->setPostName($postName);
+                };
+
+                foreach ($crawler->filterXPath("//p") as $key => $node) {
+                    $posts[$key]->setDescription($node->nodeValue);
+                };
+
+//                foreach ($crawler->filterXPath("//span[contains(@class, 'gallery ex-preview')]") as $node) {
+//                    var_dump($node->firstChild);
+//                };
+
+                $key = 0;
+                foreach ($crawler->filterXPath("//text()") as $node) {
+                    if (preg_match('/^(\d\d\.\d\d\.\d\d\d\d).*?(\d\d\.\d\d\.\d\d\d\d)$/i', trim($node->nodeValue), $matches)) {
+                        $post = $posts[$key++]->setDate($matches[1])->setEndDate($matches[2]);
+                        $this->posts[] = $post;
+                    }
+                }
+            }
+        );
+
+
+        self::$countPosts = count($this->posts);
+        echo '<p> Постов всего:' . self::$countPosts . '</p>';
+
+        foreach ($this->posts as $key => $post) {
+            if ($post->getUrl()) {
+                $this->domCrawler->clear();
+
+                $curl = curl_init();
+                curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($curl, CURLOPT_URL, $post->getUrl());
+                curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
+
+                $i = 0;
+
+                do {
+                    $html = curl_exec($curl);
+                    $i++;
+                    if ($i > 5) {
+                        break;
+                    }
+                } while ($html === false);
+
+                if ($i > 5) {
+                    var_dump('Не получается подключиться к файлу:' . $post->getUrl());
+                    die();
+                }
+
+                $this->domCrawler->add($html);
+
+                try {
+                    $html = $this->domCrawler->filterXPath("//body//div[contains(@class, 'right-part')]")->html();
+                } catch (\Exception $exception) {
+                    unset($this->posts[$key]);
+                    self::$countPosts--;
+                    continue;
+                }
+
+                preg_match('/<p>\d\d\.\d\d\.\d\d\d\d.*?\d\d\.\d\d\.\d\d\d\d<\/p>/i', $html, $times);;
+                preg_match('/<div class="statusbar">(\s*.*){0,4}<\/div>\s*<div class="overflow">(\s*.*){0,3}<\/div>/i', $html, $divs);
+                preg_match('/<h1>.*<\/h1>/i', $html, $h1);
+
+                $html = str_replace([$times[0], $divs[0], $h1[0]], '', $html);
+
+                $post->setHtml($html);
+            }
+        }
+        echo '<p> Постов осталось:' . self::$countPosts . '</p>';
     }
 }

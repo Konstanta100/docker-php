@@ -56,6 +56,11 @@ class Post
     private array $rubrics;
 
     /**
+     * @var string
+     */
+    private string $endDate;
+
+    /**
      * @return string
      */
     public function getUrl(): string
@@ -199,5 +204,18 @@ class Post
         return $this;
     }
 
+    /**
+     * @param string $endDate
+     * @return $this
+     */
+    public function setEndDate(string $endDate): self
+    {
+        $this->endDate = $endDate;
+        return $this;
+    }
 
+    public function getEndDate()
+    {
+        return $this->endDate;
+    }
 }

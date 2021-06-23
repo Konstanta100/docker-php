@@ -197,10 +197,10 @@ class ParserController extends AbstractController
     }
 
     /**
-     * @Route("/parseSmi/{year}", name="parseSmi")
+     * @Route("/parseSmi", name="parseSmi")
      * @throws \Exception
      */
-    public function parseSmiAction(string $year): Response
+    public function parseSmiAction(): Response
     {
         $urls = [];
         $months = [];
@@ -211,40 +211,42 @@ class ParserController extends AbstractController
             }
             $months[] = (string)$i; 
         }
-        
-        foreach ($months as $month){
-            $urls[] = "/index.htm?year={$year}&month={$month}";
+        $key = 11000;
+
+        for($year = 2005; $year < date('Y');$year++){
+            if(!(2013 < $year && $year < 2018)){
+                foreach ($months as $month){
+                    $key += 8;
+                    $urls[$key] = "/index.htm?year={$year}&month={$month}";
+                }
+            }
         }
-        
-        $this->parser->getNews($year, $urls, '/presscenter/','smi');
+
+        $this->parser->getNews($year, $urls, '/presscenter/','smi', true);
 
         return new Response();
     }
 
     /**
-     * @Route("/parseExhibitions/{firstYear}/{lastYear}", name="parseExhibitionsAction")
-     * @param int $firstYear
-     * @param int|null $lastYear
+     * @Route("/parseExhibitions", name="parseExhibitionsAction")
      * @return Response
      */
-    public function parseExhibitionsAction(int $firstYear, ?int $lastYear): Response
+    public function parseExhibitionsAction(): Response
     {
         $urls = [];
+        $key = 16000;
 
-        if($lastYear === null){
-            $lastYear = date('Y');
+        for ($year = 2005; $year <= date('Y'); $year++){
+            $key+=25;
+            $urls[$key] = "/index.htm?year={$year}";
         }
 
-        for ($year = $firstYear; $year <= $lastYear; $year++){
-            $urls[] = "/index.htm?year={$year}";
-        }
-
-        $this->parser->getNews($year, $urls, '/exhibitions/','past');
+        $this->parser->getExhibitions($year, $urls, '/exhibitions/','past', true);
         return new Response();
     }
 
     /**
-     * @Route("/parseArmourers", name="parseExhibitionsAction")
+     * @Route("/parseArmourers", name="parseArmourers")
      * @param int $firstYear
      * @param int|null $lastYear
      * @return Response
