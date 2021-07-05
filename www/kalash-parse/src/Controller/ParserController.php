@@ -30,166 +30,31 @@ class ParserController extends AbstractController
     }
 
     /**
-     * @Route("/parseNews/{year}", name="parseNews")
+     * @Route("/parseNews", name="parseNews")
      * @throws \Exception
      */
-    public function parseNewsAction(string $year): Response
+    public function parseNewsAction(): Response
     {
-        switch ((int)$year) {
-            case 2011:
-                $urls = [
-                    '5000'=>'/index.htm?year=2011'
-                ];
-                break;
-            case 2012:
-                $urls = [
-                    '5050'=>'/index.htm?year=2012&month=01',
-                    '5100'=>'/index.htm?year=2012&month=03',
-                    '5150'=>'/index.htm?year=2012&month=04',
-                    '5200'=>'/index.htm?year=2012&month=05',
-                    '5250'=>'/index.htm?year=2012&month=06',
-                    '5300'=>'/index.htm?year=2012&month=08',
-                    '5350'=>'/index.htm?year=2012&month=09',
-                    '5400'=>'/index.htm?year=2012&month=10',
-                    '5450'=>'/index.htm?year=2012&month=11',
-                    '5500'=>'/index.htm?year=2012&month=12'
-                ];
-                break;
-            case 2013:
-                $urls = [
-                    '5550'=>'/index.htm?year=2013&month=01',
-                    '5600'=>'/index.htm?year=2013&month=02',
-                    '5650'=>'/index.htm?year=2013&month=05',
-                    '5700'=>'/index.htm?year=2013&month=06',
-                    '5750'=>'/index.htm?year=2013&month=09',
-                    '5800'=>'/index.htm?year=2013&month=10',
-                    '5850'=>'/index.htm?year=2013&month=11',
-                    '5900'=>'/index.htm?year=2013&month=12'
-                ];
-                break;
-            case 2014:
-                $urls = [
-                    '6000'=>'/index.htm?year=2014&month=01',
-                    '6050'=>'/index.htm?year=2014&month=02',
-                    '6100'=>'/index.htm?year=2014&month=03',
-                    '6150'=>'/index.htm?year=2014&month=04',
-                    '6200'=>'/index.htm?year=2014&month=05',
-                    '6250'=>'/index.htm?year=2014&month=06',
-                    '6300'=>'/index.htm?year=2014&month=07',
-                    '6350'=>'/index.htm?year=2014&month=08',
-                    '6400'=>'/index.htm?year=2014&month=09',
-                    '6450'=>'/index.htm?year=2014&month=10',
-                    '6500'=>'/index.htm?year=2014&month=11',
-                    '6550'=>'/index.htm?year=2014&month=12'
-                ];
-                break;
-            case 2015:
-                $urls = [
-                    '6600'=>'/index.htm?year=2015&month=02',
-                    '6650'=>'/index.htm?year=2015&month=03',
-                    '6700'=>'/index.htm?year=2015&month=04',
-                    '6750'=>'/index.htm?year=2015&month=06',
-                    '6800'=>'/index.htm?year=2015&month=07',
-                    '6850'=>'/index.htm?year=2015&month=08',
-                    '6900'=>'/index.htm?year=2015&month=09',
-                    '6950'=>'/index.htm?year=2015&month=10',
-                    '7000'=>'/index.htm?year=2015&month=11',
-                ];
-                break;
-            case 2016:
-                $urls = [
-                    '7050'=>'/index.htm?year=2016&month=01',
-                    '7100'=>'/index.htm?year=2016&month=02',
-                    '7150'=>'/index.htm?year=2016&month=03',
-                    '7200'=>'/index.htm?year=2016&month=04',
-                    '7250'=>'/index.htm?year=2016&month=05',
-                    '7300'=>'/index.htm?year=2016&month=06',
-                    '7350'=>'/index.htm?year=2016&month=07',
-                    '7400'=>'/index.htm?year=2016&month=08',
-                    '7450'=>'/index.htm?year=2016&month=09',
-                    '7500'=>'/index.htm?year=2016&month=10',
-                    '7550'=>'/index.htm?year=2016&month=11',
-                    '7600'=>'/index.htm?year=2016&month=12'
-                ];
-                break;
-            case 2017:
-                $urls = [
-                    '7650'=>'/index.htm?year=2017&month=01',
-                    '7700'=>'/index.htm?year=2017&month=02',
-                    '7750'=>'/index.htm?year=2017&month=03',
-                    '7800'=>'/index.htm?year=2017&month=04',
-                    '7850'=>'/index.htm?year=2017&month=05',
-                    '7900'=>'/index.htm?year=2017&month=06',
-                    '7950'=>'/index.htm?year=2017&month=07',
-                    '8000'=>'/index.htm?year=2017&month=08',
-                    '8050'=>'/index.htm?year=2017&month=09',
-                    '8100'=>'/index.htm?year=2017&month=10',
-                    '8150'=>'/index.htm?year=2017&month=11',
-                    '8200'=>'/index.htm?year=2017&month=12'
-                ];
-                break;
-            case 2018:
-                $urls = [
-                    '8250'=>'/index.htm?year=2018&month=01',
-                    '8300'=>'/index.htm?year=2018&month=02',
-                    '8350'=>'/index.htm?year=2018&month=03',
-                    '8400'=>'/index.htm?year=2018&month=04',
-                    '8450'=>'/index.htm?year=2018&month=05',
-                    '8500'=>'/index.htm?year=2018&month=06',
-                    '8550'=>'/index.htm?year=2018&month=07',
-                    '8600'=>'/index.htm?year=2018&month=08',
-                    '8650'=>'/index.htm?year=2018&month=09',
-                    '8700'=>'/index.htm?year=2018&month=10',
-                    '8750'=>'/index.htm?year=2018&month=11',
-                    '8800'=>'/index.htm?year=2018&month=12'
-                ];
-                break;
-            case 2019:
-                $urls = [
-                    '8850'=>'/index.htm?year=2019&month=01',
-                    '8900'=>'/index.htm?year=2019&month=02',
-                    '8950'=>'/index.htm?year=2019&month=03',
-                    '9000'=>'/index.htm?year=2019&month=04',
-                    '9050'=>'/index.htm?year=2019&month=05',
-                    '9100'=>'/index.htm?year=2019&month=06',
-                    '9150'=>'/index.htm?year=2019&month=07',
-                    '9200'=>'/index.htm?year=2019&month=08',
-                    '9250'=>'/index.htm?year=2019&month=09',
-                    '9300'=>'/index.htm?year=2019&month=10',
-                    '9350'=>'/index.htm?year=2019&month=11',
-                    '9400'=>'/index.htm?year=2019&month=12'
-                ];
-                break;
-            case 2020:
-                $urls = [
-                    '9450'=>'/index.htm?year=2020&month=01',
-                    '9500'=>'/index.htm?year=2020&month=02',
-                    '9550'=>'/index.htm?year=2020&month=03',
-                    '9600'=>'/index.htm?year=2020&month=04',
-                    '9650'=>'/index.htm?year=2020&month=05',
-                    '9700'=>'/index.htm?year=2020&month=06',
-                    '9750'=>'/index.htm?year=2020&month=07',
-                    '9800'=>'/index.htm?year=2020&month=08',
-                    '9850'=>'/index.htm?year=2020&month=09',
-                    '9900'=>'/index.htm?year=2020&month=10',
-                    '9950'=>'/index.htm?year=2020&month=11',
-                    '10000'=>'/index.htm?year=2020&month=12'
-                ];
-                break;
-            case 2021:
-                $urls = [
-                    '10050'=>'/index.htm?year=2021&month=01',
-                    '10100'=>'/index.htm?year=2021&month=02',
-                    '10150'=>'/index.htm?year=2021&month=03',
-                    '10200'=>'/index.htm?year=2021&month=04',
-                    '10250'=>'/index.htm?year=2021&month=05',
-                    '10300'=>'/index.htm?year=2021&month=06',
-                ];
-                break;
-            default:
-                echo 'Fail';
-                die();
+
+        $key = 17000;
+        $urls = [];
+
+        for($i = 1; $i <= 12; $i++){
+            if($i < 10){
+                $i = "0{$i}";
+            }
+            $months[] = (string)$i;
         }
+
+        for($year = 2012; $year <= date('Y');$year++){
+            foreach ($months as $month){
+                $key += 8;
+                $urls[$key] = "/index.htm?year={$year}&month={$month}";
+            }
+
+        }
+
+
 
         $this->parser->getNews($year, $urls, '/presscenter/','news', true);
 
@@ -222,6 +87,7 @@ class ParserController extends AbstractController
             }
         }
 
+
         $this->parser->getNews($year, $urls, '/presscenter/','smi', true);
 
         return new Response();
@@ -234,7 +100,7 @@ class ParserController extends AbstractController
     public function parseExhibitionsAction(): Response
     {
         $urls = [];
-        $key = 16000;
+        $key = 20000;
 
         for ($year = 2005; $year <= date('Y'); $year++){
             $key+=25;

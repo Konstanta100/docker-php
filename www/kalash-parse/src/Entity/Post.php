@@ -58,7 +58,7 @@ class Post
     /**
      * @var string
      */
-    private string $endDate;
+    private string $endDate = '';
 
     /**
      * @return string
@@ -214,7 +214,7 @@ class Post
         return $this;
     }
 
-    public function getEndDate()
+    public function getEndDate(): string
     {
         return $this->endDate;
     }

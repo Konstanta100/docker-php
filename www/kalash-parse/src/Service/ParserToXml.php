@@ -72,7 +72,7 @@ class ParserToXml
     private SimpleXMLElement $xmlElement;
     private static int $postId;
     private string $host = 'http://kalash';
-    private string $parsedHost = 'http://museum-mtk.ru';
+    private string $parsedHost = 'http://en.museum-mtk.ru';//http://museum-mtk.ru';
 
     private int $firstParentId;
     private int $secondParent;
@@ -134,9 +134,11 @@ class ParserToXml
                 continue;
             }
             foreach ($this->posts as $post) {
+
                 if ($post->getPostName()) {
                     $this->prefix = "{$post->getPostName()}_";
                 }
+
                 $html = $this->changeLinks($post->getHtml());
                 $this->createItem($post->setHtml($html));
             }
@@ -585,6 +587,24 @@ class ParserToXml
     private function translateCategory(string $rubric): string
     {
         switch ($rubric) {
+            case 'Common news':
+                $rubric = 'news-general-en';
+                break;
+            case 'Publications':
+                $rubric = 'publications-presscenter-en';
+                break;
+            case 'Exhibitions':
+                $rubric = 'exhibitions-presscenter-en';
+                break;
+            case 'Collections':
+                $rubric = 'сollections-en';
+                break;
+            case 'Enlightment and education':
+                $rubric = 'education-presscenter-en';
+                break;
+            case 'Tourism':
+                $rubric = 'tourism-en';
+                break;
             case 'Общие новости':
                 $rubric = 'news-general';
                 break;
@@ -641,10 +661,12 @@ class ParserToXml
             case 'bibliography':
                 $rubric = 'bibliography';
                 break;
+            case 'History':
             case 'past':
                 $rubric = 'past';
                 break;
             default:
+                var_dump('Категория не найдена');
                 die();
         }
 
@@ -746,7 +768,7 @@ class ParserToXml
         foreach ($urls as $key => $url) {
             self::$postId = $key;
             $curl = curl_init();
-            curl_setopt($curl, CURLOPT_URL, $this->parsedHost . $this->category . $postfix . $url);
+            curl_setopt($curl, CURLOPT_URL, $this->parsedHost . $this->category . $postfix  . $url);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
 
@@ -818,7 +840,7 @@ class ParserToXml
                 foreach ($crawler->filterXPath("//h3") as $node) {
                     $url = $node->firstChild->attributes->item(0)->nodeValue;
                     $postName = preg_replace('/^.*?=(\d+)$/i', 'id$1', $url);
-                    $posts[] = (new Post())->addRubric($this->postfix)->setTitle($node->nodeValue)->setId(self::$postId++)->setUrl($this->parsedHost . $url)->setPostName($postName);
+                    $posts[] = (new Post())->addRubric('History')->setTitle($node->nodeValue)->setId(self::$postId++)->setUrl($this->parsedHost . $this->category . $this->postfix . '/'  . $url)->setPostName($postName);
                 };
 
                 foreach ($crawler->filterXPath("//p") as $key => $node) {
@@ -842,6 +864,7 @@ class ParserToXml
 
         self::$countPosts = count($this->posts);
         echo '<p> Постов всего:' . self::$countPosts . '</p>';
+        var_dump($this->posts);
 
         foreach ($this->posts as $key => $post) {
             if ($post->getUrl()) {
