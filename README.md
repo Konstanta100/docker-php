@@ -1,4 +1,4 @@
-# docker-php
+# docker-php-nginx-mysql-PHPadmin
 
 Сборка для разворачивания приложения на php/nginx/phpAdmin/mysql.
 
