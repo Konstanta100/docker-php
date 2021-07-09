@@ -1,16 +1,11 @@
 # Версия docker-compose
 version: '3'
-# Список наших сервисов (контейнеров)
 services:
   nginx:
-    # используем последний стабильный образ nginx
-    image: nginx:latest
-    container_name: nginx
-    # маршрутизируем порты
+    image: nginx:${NGINX_VERSION}
     ports:
       - "80:80"
       - "443:443"
-    # монтируем директории, слева директории на основной машине, справа - куда они монтируются в контейнере
     volumes:
       - ./etc/nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./www:/var/www
@@ -22,21 +17,25 @@ services:
     networks:
       - backend    
   php:
-    # у нас свой образ для PHP, указываем путь к нему и говорим что его надо собрать
-    build: ./etc/php
-    container_name: php
+    build: 
+      context: ./etc/php
+      args: 
+        PHP_VERSION: ${PHP_VERSION}
+        TZ: ${TZ}
     restart: always
-    # монтируем директорию с проектами
+    env_file:
+      - ".env" 
     volumes:
       - ./etc/php/php.ini:/usr/local/etc/php/conf.d/php.ini
       - ./www:/var/www
     networks:
       - backend        
-  myadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
+  phpmyadmin:
+    image: phpmyadmin:${PHPADMIN_VERSION}
     ports:
       - "8080:80"
+    env_file:
+      - ".env" 
     environment:
       - PMA_ARBITRARY=1
       - PMA_HOST=${MYSQL_HOST}
@@ -53,11 +52,8 @@ services:
       - "3306:3306"
     volumes:
       - ./etc/mysql:/var/lib/mysql
-    #Явный указатель на директории откуда брать переменные может быть несколько .env-файлов
-    #По умолчанию ищется .env файл из корня проекта
     env_file:
       - ".env"  
-    # задаем данные для root пользователя
     environment:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
